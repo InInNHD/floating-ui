@@ -1,0 +1,46 @@
+name: Issue 3525 platform acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/qa-3525-platforms]
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      FULL_QA_ENGINES: chrome,chromium,firefox,webkit
+      FULL_QA_REQUIRE_CHROME_MAJOR: '155'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome155
+        with:
+          chrome-version: '155'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec turbo build --filter=@floating-ui/react...
+      - run: node .tmp/full-qa/patch-vite-config.cjs
+      - run: npm install --prefix .tmp/legacy --no-save --package-lock=false @floating-ui/react@0.24.8 react@18.2.0 react-dom@18.2.0
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: node .tmp/full-qa/ci.cjs
+        env:
+          FULL_QA_CHROME_PATH: ${{ steps.chrome155.outputs.chrome-path }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-3525-${{ matrix.os }}
+          include-hidden-files: true
+          path: |
+            .tmp/full-qa/results.json
+            .tmp/full-qa/server-*.log
+            .tmp/full-qa/screenshots/
