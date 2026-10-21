@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {spawn} = require('node:child_process');
+const {stripVTControlCharacters} = require('node:util');
 const repo = path.resolve(__dirname, '../..');
 const vite = path.join(path.dirname(require.resolve('vite/package.json')), 'bin/vite.js');
 const processes = [];
@@ -34,9 +35,10 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       while (true) {
         if (spawnError) throw spawnError;
         if (Date.now() > deadline || child.exitCode !== null || child.signalCode !== null) {
-          throw new Error(`${variant} test server did not become ready; see server-${variant}.log`);
+          throw new Error(`${variant} test server did not become ready; see server-${variant}.log\n${stripVTControlCharacters(serverOutput)}`);
         }
-        if (/\bready in\b/.test(serverOutput) && serverOutput.includes(url)) {
+        const plainOutput = stripVTControlCharacters(serverOutput);
+        if (/\bready in\b/.test(plainOutput) && plainOutput.includes(url)) {
           try {
             const response = await fetch(url, {signal: AbortSignal.timeout(2000)});
             if (response.ok && child.exitCode === null && child.signalCode === null && !spawnError) break;
