@@ -35,6 +35,14 @@ jobs:
       - run: node .tmp/full-qa/ci.cjs
         env:
           FULL_QA_CHROME_PATH: ${{ steps.chrome155.outputs.chrome-path }}
+      - name: Verify macOS Chrome with a visible browser
+        if: ${{ !cancelled() && runner.os == 'macOS' && steps.chrome155.outcome == 'success' }}
+        run: node .tmp/full-qa/ci.cjs
+        env:
+          FULL_QA_ENGINE: chrome
+          FULL_QA_HEADLESS: 'false'
+          FULL_QA_OUTPUT: results-headed.json
+          FULL_QA_CHROME_PATH: ${{ steps.chrome155.outputs.chrome-path }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -42,5 +50,6 @@ jobs:
           include-hidden-files: true
           path: |
             .tmp/full-qa/results.json
+            .tmp/full-qa/results-headed.json
             .tmp/full-qa/server-*.log
             .tmp/full-qa/screenshots/

@@ -4,6 +4,7 @@ const os = require('node:os');
 const {chromium, firefox, webkit} = require('@playwright/test');
 
 const output = __dirname;
+const headless = process.env.FULL_QA_HEADLESS !== 'false';
 fs.mkdirSync(path.join(output, 'screenshots'), {recursive: true});
 const engines = [
   ['chrome', chromium, process.env.FULL_QA_CHROME_PATH
@@ -26,6 +27,7 @@ const report = {
   startedAt: new Date().toISOString(),
   host: {platform: os.platform(), release: os.release(), arch: os.arch()},
   playwright: require('@playwright/test/package.json').version,
+  headless,
   expectedEngines,
   chromeExecutable: process.env.FULL_QA_CHROME_PATH || 'channel:chrome',
   requiredEnvironment: process.platform === 'darwin'
@@ -72,7 +74,7 @@ async function selectBanana(page, url) {
   for (const [engine, browserType, options] of engines) {
     let browser;
     try {
-      browser = await browserType.launch({headless: true, ...options});
+      browser = await browserType.launch({headless, ...options});
       for (const [version, port] of versions) {
         for (const strict of [false, true]) {
           const page = await browser.newPage({viewport: {width: 1280, height: 720}});
