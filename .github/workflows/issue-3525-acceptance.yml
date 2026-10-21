@@ -10,11 +10,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     env:
-      FULL_QA_ENGINES: chrome
+      FULL_QA_ENGINES: chrome,edge
       FULL_QA_REQUIRE_CHROME_MAJOR: '155'
     steps:
       - uses: actions/checkout@v4
